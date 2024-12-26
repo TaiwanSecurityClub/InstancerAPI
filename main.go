@@ -2,29 +2,26 @@ package main
 import (
 //    "net/http"
     "github.com/gin-gonic/gin"
-    "github.com/gin-contrib/sessions"
-    "github.com/gin-contrib/sessions/cookie"
     "github.com/go-errors/errors"
 
-    "github.com/Jimmy01240397/CTF-Instancer/router"
-    "github.com/Jimmy01240397/CTF-Instancer/middlewares/proxy"
-    "github.com/Jimmy01240397/CTF-Instancer/utils/config"
-    "github.com/Jimmy01240397/CTF-Instancer/utils/errutil"
+    "github.com/TaiwanSecurityClub/InstancerAPI/router"
+    "github.com/TaiwanSecurityClub/InstancerAPI/middlewares/proxy"
+    "github.com/TaiwanSecurityClub/InstancerAPI/middlewares/token"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/config"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/errutil"
 )
 
 func main() {
     if !config.Debug {
         gin.SetMode(gin.ReleaseMode)
     }
-    store := cookie.NewStore(config.Secret)
     backend := gin.Default()
     if config.ProxyMode {
         backend.Use(proxy.Proxy)
     }
     backend.Use(errorHandler)
     backend.Use(gin.CustomRecovery(panicHandler))
-    backend.Use(sessions.Sessions(config.Sessionname, store))
-    backend.LoadHTMLGlob("template/*")
+    backend.Use(token.AddMeta)
     router.Init(&backend.RouterGroup)
     backend.Run(":"+string(config.Port))
 }

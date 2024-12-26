@@ -4,8 +4,8 @@ import (
     "sync"
     "time"
     
-    "github.com/Jimmy01240397/CTF-Instancer/utils/config"
-    "github.com/Jimmy01240397/CTF-Instancer/utils/database"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/config"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/database"
 )
 
 func init() {

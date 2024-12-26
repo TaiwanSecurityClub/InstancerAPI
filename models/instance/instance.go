@@ -8,13 +8,14 @@ import (
     "os/exec"
     "path"
 
-    "github.com/Jimmy01240397/CTF-Instancer/utils/config"
-    "github.com/Jimmy01240397/CTF-Instancer/utils/database"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/config"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/database"
 )
 
 type instance struct {
     ID string `gorm:"primaryKey"`
     User string
+    Flag string
     Port uint16
     ExpiredAt time.Time
     SubNets subnetarr
@@ -25,6 +26,7 @@ func (c *instance) up() error {
     cmd.Dir = config.ChalDir
     cmd.Env = append(cmd.Environ(), fmt.Sprintf("PORT=%d", c.Port))
     cmd.Env = append(cmd.Environ(), fmt.Sprintf("ID=%s", c.ID))
+    cmd.Env = append(cmd.Environ(), fmt.Sprintf("FLAG=%s", c.GetFlag()))
     for i, subnet := range c.SubNets {
         cmd.Env = append(cmd.Environ(), fmt.Sprintf("SUBNET%d=%s", i, subnet.String()))
     }
@@ -40,6 +42,7 @@ func (c *instance) down() error {
     cmd.Dir = config.ChalDir
     cmd.Env = append(cmd.Environ(), fmt.Sprintf("PORT=%d", c.Port))
     cmd.Env = append(cmd.Environ(), fmt.Sprintf("ID=%s", c.ID))
+    cmd.Env = append(cmd.Environ(), fmt.Sprintf("FLAG=%s", c.GetFlag()))
     for i, subnet := range c.SubNets {
         cmd.Env = append(cmd.Environ(), fmt.Sprintf("SUBNET%d=%s", i, subnet.String()))
     }
@@ -48,6 +51,10 @@ func (c *instance) down() error {
         return err
     }
     return nil
+}
+
+func (c *instance) GetFlag() string {
+    return fmt.Sprintf("%s{%s_%s}", config.FlagPrefix, config.FlagMsg, c.Flag)
 }
 
 func (c *instance) expired() {
@@ -77,6 +84,7 @@ func newinstance(user string) (*instance, bool, error) {
     ins := instance{
         ID: genid(),
         User: user,
+        Flag: genid(),
         Port: genport(),
         ExpiredAt: time.Now().Add(config.Validity),
         SubNets: subnets,
@@ -87,6 +95,7 @@ func newinstance(user string) (*instance, bool, error) {
     database.GetDB().Model(&instance{}).Create(&ins)
     os.Mkdir(fmt.Sprintf("/tmp/%s", ins.ID), 0755)
     os.WriteFile(fmt.Sprintf("/tmp/%s/userid", ins.ID), []byte(ins.User), 0644)
+    os.WriteFile(fmt.Sprintf("/tmp/%s/flag", ins.ID), []byte(ins.GetFlag()), 0644)
     return &ins, false, nil
 }
 

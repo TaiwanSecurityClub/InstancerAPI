@@ -4,30 +4,23 @@ import (
     "os"
     "strconv"
     "time"
-    "crypto/rand"
 
     netaddr "github.com/dspinhirne/netaddr-go"
 )
 
 var Debug bool
 var Port string
-var Secret []byte
-var Sessionname string
-var Title string
+var Token string
 var MaxPort uint16
 var MinPort uint16
 var Validity time.Duration
 var BaseScheme string
 var BaseHost string
+var FlagPrefix string
+var FlagMsg string
 var ChalDir string
 var SubNetPool *netaddr.IPv4Net
 var Prefix uint8
-var CAPTCHA_SRC string
-var CAPTCHA_CLASS string
-var CAPTCHA_SITE_KEY string
-var CAPTCHA_SECRET_KEY string
-var CAPTCHA_BACKEND string
-var CAPTCHA_RESPONSE_NAME string
 var DBservice string
 var DBuser string
 var DBpasswd string
@@ -78,22 +71,12 @@ func init() {
         }
     }
     Port = os.Getenv("PORT")
-    Secret = make([]byte, 12)
-    _, err = rand.Read(Secret)
-    if err != nil {
-        panic(err)
-    }
-    Sessionname = os.Getenv("SESSIONNAME")
-    Title = os.Getenv("TITLE")
     ChalDir = os.Getenv("CHALDIR")
+    Token = os.Getenv("TOKEN")
+    FlagPrefix = os.Getenv("FLAGPREFIX")
+    FlagMsg = os.Getenv("FLAGMSG")
     BaseScheme = os.Getenv("BASESCHEME")
     BaseHost = os.Getenv("BASEHOST")
-    CAPTCHA_SRC = os.Getenv("CAPTCHA_SRC")
-    CAPTCHA_CLASS = os.Getenv("CAPTCHA_CLASS")
-    CAPTCHA_SITE_KEY = os.Getenv("CAPTCHA_SITE_KEY")
-    CAPTCHA_SECRET_KEY = os.Getenv("CAPTCHA_SECRET_KEY")
-    CAPTCHA_BACKEND = os.Getenv("CAPTCHA_BACKEND")
-    CAPTCHA_RESPONSE_NAME = os.Getenv("CAPTCHA_RESPONSE_NAME")
     DBservice, exists = os.LookupEnv("DBSERVICE")
     if !exists {
         DBservice = "sqlite"

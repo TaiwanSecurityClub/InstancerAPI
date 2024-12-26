@@ -7,4 +7,4 @@ sleep 3s
 cd $CHALDIR
 docker compose build
 cd $pwddir
-./ctfinstancer
+./instancerapi

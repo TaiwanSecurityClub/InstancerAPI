@@ -8,8 +8,8 @@ import (
 
     "github.com/gin-gonic/gin"
 
-    "github.com/Jimmy01240397/CTF-Instancer/models/instance"
-    "github.com/Jimmy01240397/CTF-Instancer/utils/config"
+    "github.com/TaiwanSecurityClub/InstancerAPI/models/instance"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/config"
 )
 
 func Proxy(c *gin.Context) {

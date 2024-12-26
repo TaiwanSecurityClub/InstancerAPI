@@ -6,7 +6,7 @@ import (
     "github.com/google/uuid"
     netaddr "github.com/dspinhirne/netaddr-go"
 
-    "github.com/Jimmy01240397/CTF-Instancer/utils/config"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/config"
 )
 
 type rangedata struct {

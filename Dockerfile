@@ -1,11 +1,16 @@
-FROM golang:1.19-alpine as builder
+FROM golang:1.23-alpine as builder
 
 RUN apk add --no-cache make build-base
 
+WORKDIR /src
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+WORKDIR /
+RUN rm -r /src
 COPY . /src
 WORKDIR /src
 RUN make clean && make
-
 
 FROM docker:dind as release
 

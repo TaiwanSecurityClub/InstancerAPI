@@ -3,86 +3,99 @@ import (
     "fmt"
     "time"
     "regexp"
+    "strconv"
 
     "github.com/gin-gonic/gin"
-    "github.com/gin-contrib/sessions"
 
-    "github.com/Jimmy01240397/CTF-Instancer/utils/config"
-    "github.com/Jimmy01240397/CTF-Instancer/utils/captcha"
-    "github.com/Jimmy01240397/CTF-Instancer/models/auth"
-    "github.com/Jimmy01240397/CTF-Instancer/models/instance"
+    "github.com/TaiwanSecurityClub/InstancerAPI/middlewares/token"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/config"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/errutil"
+    "github.com/TaiwanSecurityClub/InstancerAPI/models/instance"
 )
+
+type statusdata struct {
+    AccessPoint string `json:"accesspoint"`
+    ExpiredAt time.Time `json:"expiredat"`
+}
+
+type userdata struct {
+    ID int `json:"userid"`
+}
 
 var router *gin.RouterGroup
 
 func Init(r *gin.RouterGroup) {
     router = r
-    router.GET("/", index)
-    router.POST("/create", create)
-    router.POST("/stop", stop)
-    //user.Init(router.Group("/user"))
+    router.GET("/", token.CheckAuth, status)
+    router.GET("/flag", token.CheckAuth, flag)
+    router.POST("/create", token.CheckAuth, create)
+    router.POST("/destroy", token.CheckAuth, destroy)
 }
 
-func index(c *gin.Context) {
-    session := sessions.Default(c)
-    name := ""
-    name, _ = session.Get("name").(string)
+func status(c *gin.Context) {
+    name := c.Query("userid")
+    if name == "" {
+        errutil.AbortAndStatus(c, 404)
+        return
+    }
     ins := instance.GetInstance(name)
-    data := gin.H{
-        "Title": config.Title,
-        "CAPTCHA_SRC": config.CAPTCHA_SRC,
-        "CAPTCHA_CLASS": config.CAPTCHA_CLASS,
-        "CAPTCHA_SITE_KEY": config.CAPTCHA_SITE_KEY,
-        "NCMode": config.NCMode,
-        "Now": time.Now(),
-    }
     if ins == nil {
-        data["InstanceId"] = ""
-    } else {
-        data["InstanceId"] = ins.ID
-        data["ExpiredAt"] = ins.ExpiredAt
-        if config.ProxyMode {
-            re := regexp.MustCompile(`:[0-9]+$`)
-            data["URL"] = fmt.Sprintf("%s://%s.%s%s", config.BaseScheme, ins.ID, config.BaseHost, re.FindString(c.Request.Host))
-        } else if config.NCMode {
-            data["URL"] = fmt.Sprintf("%s %s %d", config.BaseScheme, config.BaseHost, ins.Port)
-        } else {
-            data["URL"] = fmt.Sprintf("%s://%s:%d", config.BaseScheme, config.BaseHost, ins.Port)
-        }
+        errutil.AbortAndStatus(c, 404)
+        return
     }
-    c.HTML(200, "index.tmpl", data)
+    data := statusdata{
+        ExpiredAt: ins.ExpiredAt,
+    }
+    if config.ProxyMode {
+        re := regexp.MustCompile(`:[0-9]+$`)
+        data.AccessPoint = fmt.Sprintf("%s://%s.%s%s", config.BaseScheme, ins.ID, config.BaseHost, re.FindString(c.Request.Host))
+        data.AccessPoint = fmt.Sprintf("<a href=\"%s\">%s</a>", data.AccessPoint, data.AccessPoint)
+    } else if config.NCMode {
+        data.AccessPoint = fmt.Sprintf("%s %s %d", config.BaseScheme, config.BaseHost, ins.Port)
+        data.AccessPoint = fmt.Sprintf("<code>%s</code>", data.AccessPoint)
+    } else {
+        data.AccessPoint = fmt.Sprintf("%s://%s:%d", config.BaseScheme, config.BaseHost, ins.Port)
+        data.AccessPoint = fmt.Sprintf("<a href=\"%s\">%s</a>", data.AccessPoint, data.AccessPoint)
+    }
+    c.JSON(200, data)
+}
+
+func flag(c *gin.Context) {
+    name := c.Query("userid")
+    if name == "" {
+        errutil.AbortAndStatus(c, 404)
+        return
+    }
+    ins := instance.GetInstance(name)
+    if ins == nil {
+        errutil.AbortAndStatus(c, 404)
+        return
+    }
+    c.String(200, ins.GetFlag())
 }
 
 func create(c *gin.Context) {
-    token := c.PostForm("token")
-    if !captcha.Verify(c) {
-        c.String(400, "Captcha verification failed.")
-        return
+    var user userdata
+    if err := c.ShouldBindJSON(&user); err != nil {
+        errutil.AbortAndStatus(c, 400)
     }
-    name, err := auth.Auth(token)
-    if err != nil {
-        c.String(400, "Invalid Token.")
-        return
-    }
-    _, err = instance.Up(name)
+    name := strconv.Itoa(user.ID)
+    _, err := instance.Up(name)
     if err != nil {
         panic(err)
     }
-    session := sessions.Default(c)
-    session.Set("name", name)
-    session.Save()
-    c.Redirect(301, "/")
+    c.JSON(200, true)
 }
 
-func stop(c *gin.Context) {
-    session := sessions.Default(c)
-    name := ""
-    name, _ = session.Get("name").(string)
+func destroy(c *gin.Context) {
+    var user userdata
+    if err := c.ShouldBindJSON(&user); err != nil {
+        errutil.AbortAndStatus(c, 400)
+    }
+    name := strconv.Itoa(user.ID)
     err := instance.Down(name)
     if err != nil {
         panic(err)
     }
-    session.Clear()
-    session.Save()
-    c.Redirect(301, "/")
+    c.JSON(200, true)
 }

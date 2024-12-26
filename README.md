@@ -1,4 +1,4 @@
-# CTF-Instancer
+# InstancerAPI
 
 ## Run
 1. Edit `docker-compose.yml`
@@ -7,15 +7,15 @@ volumes:
 - ./chal:/app/chal:ro
 environment:
 - PORT=8000
-- SESSIONNAME=session
+- TOKEN=testtoken
 - DBNAME=instance.db
-# Your Instancer Title
-- TITLE=
 # Instance port range
 - MINPORT=30000
 - MAXPORT=31000
 # Instance Validity
 - VALIDITY=3m
+- FLAGPREFIX=TSC
+- FLAGMSG=testflag
 # Instance subnet prefix
 - PREFIX=29
 # Instance subnet pool
@@ -25,10 +25,6 @@ environment:
 - BASESCHEME=http
 # Base host name. For example use aaa.com you will get <id>.aaa.com for instance host
 - BASEHOST=
-- CAPTCHA_SITE_KEY=
-- CAPTCHA_SECRET_KEY=
-# CTFD URL
-- CTFDURL=
 - PROXYMODE=true
 - NCMODE=false
 ports:
@@ -43,12 +39,16 @@ ports:
 version: '3'
 services:
   chal:
+    image: chal
     build: .
     ports:
     # Instancer will use ${PORT} to control your port
     - ${PORT}:11111
+    environment:
+    - FLAG=${FLAG}
     volumes:
     - /tmp/${ID}/userid:/userid:ro
+    - /tmp/${ID}/flag:/flag:ro
     networks:
       default:
 

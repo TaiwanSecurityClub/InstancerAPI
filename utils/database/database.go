@@ -11,7 +11,7 @@ import (
     "gorm.io/gorm/logger"
     "gorm.io/gorm"
     
-    "github.com/Jimmy01240397/CTF-Instancer/utils/config"
+    "github.com/TaiwanSecurityClub/InstancerAPI/utils/config"
 )
 
 var db *gorm.DB

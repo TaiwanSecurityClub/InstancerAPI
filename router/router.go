@@ -1,9 +1,11 @@
 package router
 import (
     "fmt"
+    "bytes"
     "time"
     "regexp"
     "strconv"
+    "text/template"
 
     "github.com/gin-gonic/gin"
 
@@ -46,16 +48,36 @@ func status(c *gin.Context) {
     data := statusdata{
         ExpiredAt: ins.ExpiredAt,
     }
-    if config.ProxyMode {
-        re := regexp.MustCompile(`:[0-9]+$`)
-        data.AccessPoint = fmt.Sprintf("%s://%s.%s%s", config.BaseScheme, ins.ID, config.BaseHost, re.FindString(c.Request.Host))
-        data.AccessPoint = fmt.Sprintf("<a href=\"%s\">%s</a>", data.AccessPoint, data.AccessPoint)
-    } else if config.NCMode {
-        data.AccessPoint = fmt.Sprintf("%s %s %d", config.BaseScheme, config.BaseHost, ins.Port)
-        data.AccessPoint = fmt.Sprintf("<code>%s</code>", data.AccessPoint)
-    } else {
-        data.AccessPoint = fmt.Sprintf("%s://%s:%d", config.BaseScheme, config.BaseHost, ins.Port)
-        data.AccessPoint = fmt.Sprintf("<a href=\"%s\">%s</a>", data.AccessPoint, data.AccessPoint)
+    data.AccessPoint = ""
+    re := regexp.MustCompile(`:[0-9]+$`)
+    for i, port := range ins.Ports {
+        switch config.GetMode(i) {
+        case config.Forward:
+            tmp := fmt.Sprintf("%s://%s:%d", config.BaseScheme, config.BaseHost, port)
+            data.AccessPoint += fmt.Sprintf("<a href=\"%s\">%s</a><br/>", tmp, tmp)
+        case config.Proxy:
+            tmp := fmt.Sprintf("%s://%s%d.%s%s", config.BaseScheme, ins.ID, i, config.BaseHost, re.FindString(c.Request.Host))
+            data.AccessPoint += fmt.Sprintf("<a href=\"%s\">%s</a><br/>", tmp, tmp)
+        case config.Command:
+            tmp, err := template.New("command").Parse(config.GetCommand(i))
+            if err != nil {
+                errutil.AbortAndStatus(c, 500)
+                return
+            }
+            var buf bytes.Buffer
+            err = tmp.Execute(&buf, struct {
+                BaseHost string
+                Port uint16
+            } {
+                BaseHost: config.BaseHost,
+                Port: port,
+            })
+            if err != nil {
+                errutil.AbortAndStatus(c, 500)
+                return
+            }
+            data.AccessPoint += fmt.Sprintf("<code>%s</code><br/>", buf.String())
+        }
     }
     c.JSON(200, data)
 }

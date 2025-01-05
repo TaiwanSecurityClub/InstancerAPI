@@ -1,9 +1,11 @@
 package config
 
 import (
+    "fmt"
     "os"
     "strconv"
     "time"
+    "strings"
 
     netaddr "github.com/dspinhirne/netaddr-go"
 )
@@ -21,15 +23,12 @@ var FlagMsg string
 var ChalDir string
 var SubNetPool *netaddr.IPv4Net
 var Prefix uint8
-var DBservice string
-var DBuser string
-var DBpasswd string
-var DBhost string
-var DBport string
-var DBname string
-var DBdebug bool
-var ProxyMode bool
-var NCMode bool
+
+const (
+    Forward = 0
+    Proxy = 1
+    Command = 2
+)
 
 func init() {
     loadenv()
@@ -43,33 +42,6 @@ func init() {
             Debug = false
         }
     }
-    dbdebugstr, exists := os.LookupEnv("DBDEBUG")
-    if !exists {
-        DBdebug = true
-    } else {
-        DBdebug, err = strconv.ParseBool(dbdebugstr)
-        if err != nil {
-            DBdebug = false
-        }
-    }
-    proxymodestr, exists := os.LookupEnv("PROXYMODE")
-    if !exists {
-        ProxyMode = false
-    } else {
-        ProxyMode, err = strconv.ParseBool(proxymodestr)
-        if err != nil {
-            ProxyMode = false
-        }
-    }
-    ncmodestr, exists := os.LookupEnv("NCMODE")
-    if !exists || ProxyMode {
-        NCMode = false
-    } else {
-        NCMode, err = strconv.ParseBool(ncmodestr)
-        if err != nil {
-            NCMode = false
-        }
-    }
     Port = os.Getenv("PORT")
     ChalDir = os.Getenv("CHALDIR")
     Token = os.Getenv("TOKEN")
@@ -77,15 +49,6 @@ func init() {
     FlagMsg = os.Getenv("FLAGMSG")
     BaseScheme = os.Getenv("BASESCHEME")
     BaseHost = os.Getenv("BASEHOST")
-    DBservice, exists = os.LookupEnv("DBSERVICE")
-    if !exists {
-        DBservice = "sqlite"
-    }
-    DBuser = os.Getenv("DBUSER")
-    DBpasswd = os.Getenv("DBPASSWD")
-    DBhost = os.Getenv("DBHOST")
-    DBport = os.Getenv("DBPORT")
-    DBname = os.Getenv("DBNAME")
     subnetpoolstr, exists := os.LookupEnv("SUBNETPOOL")
     if !exists {
         SubNetPool, _ = netaddr.ParseIPv4Net("172.16.0.0/16")
@@ -134,4 +97,26 @@ func init() {
             Validity = 3 * time.Minute
         }
     }
+}
+
+func GetMode(index int) int {
+    modestr, exists := os.LookupEnv(fmt.Sprintf("MODE%d", index))
+    if !exists {
+        return Forward
+    }
+    modestr = strings.ToLower(modestr)
+    switch modestr {
+    case "forward":
+        return Forward
+    case "proxy":
+        return Proxy
+    case "command":
+        return Command
+    default:
+        return Forward
+    }
+}
+
+func GetCommand(index int) string {
+    return os.Getenv(fmt.Sprintf("COMMAND%d", index))
 }

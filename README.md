@@ -8,7 +8,6 @@ volumes:
 environment:
 - PORT=8000
 - TOKEN=testtoken
-- DBNAME=instance.db
 # Instance port range
 - MINPORT=30000
 - MAXPORT=31000
@@ -25,8 +24,10 @@ environment:
 - BASESCHEME=http
 # Base host name. For example use aaa.com you will get <id>.aaa.com for instance host
 - BASEHOST=
-- PROXYMODE=true
-- NCMODE=false
+# Access mode: Proxy, Forward, Command
+- MODE0=Proxy
+# For Command mode
+- COMMAND0=nc {{ .BaseHost }} {{ .Port }}
 ports:
 # Same as PORT environment
 - 8000:8000
@@ -42,8 +43,8 @@ services:
     image: chal
     build: .
     ports:
-    # Instancer will use ${PORT} to control your port
-    - ${PORT}:11111
+    # Instancer will use ${PORT0} to control your port
+    - ${PORT0}:11111
     environment:
     - FLAG=${FLAG}
     volumes:

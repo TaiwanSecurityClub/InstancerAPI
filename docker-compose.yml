@@ -6,11 +6,11 @@ services:
     build: .
     volumes:
     - ./chal:/app/chal:ro
+    - ./images:/app/images
     privileged: true
     environment:
     - PORT=8000
     - TOKEN=testtoken
-    - DBNAME=instance.db
     - MINPORT=30000
     - MAXPORT=31000
     - VALIDITY=3m
@@ -21,8 +21,18 @@ services:
     - CHALDIR=chal
     - BASESCHEME=http
     - BASEHOST=
-    - PROXYMODE=true
-    - NCMODE=false
+    - MODE0=Proxy
+    #- MODE0=Forward
+    #- MODE0=Command
+    #- COMMAND0=nc {{ .BaseHost }} {{ .Port }}
     ports:
     - 8000:8000
     #- 30000-31000:30000-31000
+    networks:
+      default:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 10.100.0.0/24

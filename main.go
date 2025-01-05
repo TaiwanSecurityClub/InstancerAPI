@@ -16,9 +16,7 @@ func main() {
         gin.SetMode(gin.ReleaseMode)
     }
     backend := gin.Default()
-    if config.ProxyMode {
-        backend.Use(proxy.Proxy)
-    }
+    backend.Use(proxy.Proxy)
     backend.Use(errorHandler)
     backend.Use(gin.CustomRecovery(panicHandler))
     backend.Use(token.AddMeta)

@@ -20,7 +20,7 @@ COPY --from=builder /src/bin /app
 
 WORKDIR /app
 
-RUN touch .env && images
+RUN touch .env && mkdir images
 
 COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
 

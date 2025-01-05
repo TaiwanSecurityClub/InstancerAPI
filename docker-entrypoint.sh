@@ -29,7 +29,7 @@ cd $pwddir
 
 for a in $(docker images --format "{{.Repository}}:{{.Tag}}")
 do
-    docker image save > images/$(echo "$a" | awk -F: '{print $1}' | sed 's/\//_/g').tar
+    docker image save $a > images/$(echo "$a" | awk -F: '{print $1}' | sed 's/\//_/g').tar
 done
 
 ./instancerapi

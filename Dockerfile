@@ -2,8 +2,6 @@ FROM golang:1.23-alpine as builder
 
 RUN apk add --no-cache make build-base
 
-RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
-
 WORKDIR /src
 COPY go.mod .
 COPY go.sum .
@@ -15,6 +13,8 @@ WORKDIR /src
 RUN make clean && make
 
 FROM docker:dind as release
+
+RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
 
 COPY --from=builder /src/bin /app
 
